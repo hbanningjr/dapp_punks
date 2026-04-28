@@ -14,6 +14,7 @@ describe("NFT", () => {
   const MAX_SUPPLY = 25;
   const BASE_URI =
     "bafybeidpuzq54zqnmgq5lsbegxwrwkgrt72545l3pyj6c4y3qsprfamu6u/";
+  const MAX_MINT_AMOUNT = 5;
 
   let nft, deployer, minter;
 
@@ -35,6 +36,7 @@ describe("NFT", () => {
         MAX_SUPPLY,
         ALLOW_MINTING_ON,
         BASE_URI,
+        MAX_MINT_AMOUNT,
       );
     });
 
@@ -82,7 +84,14 @@ describe("NFT", () => {
           MAX_SUPPLY,
           ALLOW_MINTING_ON,
           BASE_URI,
+          MAX_MINT_AMOUNT,
         );
+
+        // Homework #3
+        transaction = await nft
+          .connect(deployer)
+          .addToWhitelist(minter.address);
+        await transaction.wait();
 
         transaction = await nft.connect(minter).mint(1, { value: COST });
         result = await transaction.wait();
@@ -112,6 +121,16 @@ describe("NFT", () => {
         await expect(transaction)
           .to.emit(nft, "Mint")
           .withArgs(1, minter.address);
+      });
+
+      describe("Whitelist", () => {
+        describe("Success", async () => {
+          // whitelisted minter can mint
+        });
+
+        describe("Failure", async () => {
+          // non-whitelisted minter gets rejected
+        });
       });
 
       describe("Withdrawing", () => {
@@ -149,6 +168,7 @@ describe("NFT", () => {
             MAX_SUPPLY,
             ALLOW_MINTING_ON,
             BASE_URI,
+            MAX_MINT_AMOUNT,
           );
           nft.connect(minter).mint(1, { value: COST });
 
@@ -172,7 +192,12 @@ describe("NFT", () => {
             MAX_SUPPLY,
             ALLOW_MINTING_ON,
             BASE_URI,
+            MAX_MINT_AMOUNT,
           );
+          transaction = await nft
+            .connect(deployer)
+            .addToWhitelist(minter.address);
+          await transaction.wait();
 
           transaction = await nft.connect(minter).mint(3, { value: ether(30) });
           result = await transaction.wait();

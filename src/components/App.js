@@ -27,6 +27,8 @@ function App() {
   const [totalSupply, setTotalSupply] = useState(0);
   const [cost, setCost] = useState(0);
   const [balance, setBalance] = useState(0);
+  //Homework assignment (1)
+  const [maxMintAmpount, setMaxMintAmount] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
 
