@@ -27,6 +27,8 @@ describe("NFT", () => {
   describe("Deployment", () => {
     const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
 
+    let transaction, result, balanceBefore;
+
     beforeEach(async () => {
       const NFT = await ethers.getContractFactory("NFT");
       nft = await NFT.deploy(
@@ -72,8 +74,6 @@ describe("NFT", () => {
 
     describe("Success", async () => {
       const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
-
-      let transaction, result, balanceBefore;
 
       beforeEach(async () => {
         const NFT = await ethers.getContractFactory("NFT");
@@ -122,94 +122,136 @@ describe("NFT", () => {
           .to.emit(nft, "Mint")
           .withArgs(1, minter.address);
       });
-
+      // Homework #3
       describe("Whitelist", () => {
         describe("Success", async () => {
-          // whitelisted minter can mint
+          beforeEach(async () => {
+            const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
+            const NFT = await ethers.getContractFactory("NFT");
+            nft = await NFT.deploy(
+              NAME,
+              SYMBOL,
+              COST,
+              MAX_SUPPLY,
+              ALLOW_MINTING_ON,
+              BASE_URI,
+              MAX_MINT_AMOUNT,
+            );
+            transaction = await nft
+              .connect(deployer)
+              .addToWhitelist(minter.address);
+            await transaction.wait();
+            transaction = await nft.connect(minter).mint(1, { value: COST });
+            result = await transaction.wait();
+          });
+
+          it("allows whitelisted minter to mint", async () => {
+            expect(await nft.ownerOf(1)).to.equal(minter.address);
+          });
         });
 
         describe("Failure", async () => {
+          beforeEach(async () => {
+            const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
+            const NFT = await ethers.getContractFactory("NFT");
+            nft = await NFT.deploy(
+              NAME,
+              SYMBOL,
+              COST,
+              MAX_SUPPLY,
+              ALLOW_MINTING_ON,
+              BASE_URI,
+              MAX_MINT_AMOUNT,
+            );
+          });
+
           // non-whitelisted minter gets rejected
+          it("rejects non-whitelisted minter ", async () => {
+            await expect(nft.connect(minter).mint(1, { value: COST })).to.be
+              .reverted;
+          });
+        });
+
+        describe("Withdrawing", () => {
+          beforeEach(async () => {
+            balanceBefore = await ethers.provider.getBalance(deployer.address);
+            transaction = await nft.connect(deployer).withdraw();
+            result = await transaction.wait();
+          });
+
+          it("deducts the contract balance", async () => {
+            expect(await ethers.provider.getBalance(nft.address)).to.equal(0);
+          });
+
+          it("sends funds to the owner", async () => {
+            expect(
+              await ethers.provider.getBalance(deployer.address),
+            ).to.be.greaterThan(balanceBefore);
+          });
+
+          it("emits a Withdraw event", async () => {
+            await expect(transaction)
+              .to.emit(nft, "Withdraw")
+              .withArgs(COST, deployer.address);
+          });
+        });
+
+        describe("failure", async () => {
+          it("prevents non-owner from withdrawing", async () => {
+            const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
+            const NFT = await ethers.getContractFactory("NFT");
+            nft = await NFT.deploy(
+              NAME,
+              SYMBOL,
+              COST,
+              MAX_SUPPLY,
+              ALLOW_MINTING_ON,
+              BASE_URI,
+              MAX_MINT_AMOUNT,
+            );
+            nft.connect(minter).mint(1, { value: COST });
+
+            await expect(nft.connect(minter).withdraw()).to.be.reverted;
+          });
         });
       });
 
-      describe("Withdrawing", () => {
-        beforeEach(async () => {
-          balanceBefore = await ethers.provider.getBalance(deployer.address);
-          transaction = await nft.connect(deployer).withdraw();
-          result = await transaction.wait();
-        });
+      describe("Displaying NFTs", () => {
+        let transaction, result;
 
-        it("deducts the contract balance", async () => {
-          expect(await ethers.provider.getBalance(nft.address)).to.equal(0);
-        });
-
-        it("sends funds to the owner", async () => {
-          expect(
-            await ethers.provider.getBalance(deployer.address),
-          ).to.be.greaterThan(balanceBefore);
-        });
-
-        it("emits a Withdraw event", async () => {
-          await expect(transaction)
-            .to.emit(nft, "Withdraw")
-            .withArgs(COST, deployer.address);
-        });
-      });
-
-      describe("failure", async () => {
-        it("prevents non-owner from withdrawing", async () => {
+        describe("Success", async () => {
           const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
-          const NFT = await ethers.getContractFactory("NFT");
-          nft = await NFT.deploy(
-            NAME,
-            SYMBOL,
-            COST,
-            MAX_SUPPLY,
-            ALLOW_MINTING_ON,
-            BASE_URI,
-            MAX_MINT_AMOUNT,
-          );
-          nft.connect(minter).mint(1, { value: COST });
 
-          await expect(nft.connect(minter).withdraw()).to.be.reverted;
-        });
-      });
-    });
+          beforeEach(async () => {
+            const NFT = await ethers.getContractFactory("NFT");
+            nft = await NFT.deploy(
+              NAME,
+              SYMBOL,
+              COST,
+              MAX_SUPPLY,
+              ALLOW_MINTING_ON,
+              BASE_URI,
+              MAX_MINT_AMOUNT,
+            );
+            transaction = await nft
+              .connect(deployer)
+              .addToWhitelist(minter.address);
+            await transaction.wait();
 
-    describe("Displaying NFTs", () => {
-      let transaction, result;
-
-      describe("Success", async () => {
-        const ALLOW_MINTING_ON = Date.now().toString().slice(0, 10);
-
-        beforeEach(async () => {
-          const NFT = await ethers.getContractFactory("NFT");
-          nft = await NFT.deploy(
-            NAME,
-            SYMBOL,
-            COST,
-            MAX_SUPPLY,
-            ALLOW_MINTING_ON,
-            BASE_URI,
-            MAX_MINT_AMOUNT,
-          );
-          transaction = await nft
-            .connect(deployer)
-            .addToWhitelist(minter.address);
-          await transaction.wait();
-
-          transaction = await nft.connect(minter).mint(3, { value: ether(30) });
-          result = await transaction.wait();
-        });
-        it("returns all the NFTs for a given owner", async () => {
-          let tokenIds = await nft.walletOfOwner(minter.address);
-          //Uncomment this line to see the return value
-          //console.log("owner wallet", tokenIds);
-          expect(tokenIds.length).to.equal(3);
-          expect(tokenIds[0].toString()).to.equal("1");
-          expect(tokenIds[1].toString()).to.equal("2");
-          expect(tokenIds[2].toString()).to.equal("3");
+            transaction = await nft
+              .connect(minter)
+              .mint(3, { value: ether(30) });
+            result = await transaction.wait();
+          });
+          it("returns all the NFTs for a given owner", async () => {
+            let tokenIds = await nft.walletOfOwner(minter.address);
+            //Uncomment this line to see the return value
+            //console.log("owner wallet", tokenIds);
+            expect(tokenIds.length).to.equal(3);
+            expect(tokenIds[0].toString()).to.equal("1");
+            expect(tokenIds[1].toString()).to.equal("2");
+            expect(tokenIds[2].toString()).to.equal("3");
+          });
         });
       });
     });

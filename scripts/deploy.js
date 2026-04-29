@@ -15,6 +15,7 @@ async function main() {
   const IPFS_METADATA_URI =
     "ipfs://bafybeidpuzq54zqnmgq5lsbegxwrwkgrt72545l3pyj6c4y3qsprfamu6u/";
   const MAX_MINT_AMOUNT = 5;
+  const [deployer] = await hre.ethers.getSigners();
 
   // Deploy NFT
   const NFT = await hre.ethers.getContractFactory("NFT");
@@ -27,9 +28,12 @@ async function main() {
     IPFS_METADATA_URI,
     MAX_MINT_AMOUNT,
   );
-
   await nft.deployed();
   console.log(`Token deployed to: ${nft.address}\n`);
+
+  // Homework #3
+  await nft.addToWhitelist(deployer.address);
+  console.log(`Added deployer to whitelist\n`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

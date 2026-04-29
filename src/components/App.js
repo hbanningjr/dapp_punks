@@ -29,6 +29,9 @@ function App() {
   const [balance, setBalance] = useState(0);
   //Homework assignment (1)
   const [maxMintAmpount, setMaxMintAmount] = useState(0);
+  //Homework (3)
+  const [tokenIds, setTokenIds] = useState([]);
+  const [lastTokenId, setLastTokenId] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,13 +47,20 @@ function App() {
         provider,
       );
       setNFT(nft);
-
       // Fetch accounts
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
       const account = ethers.utils.getAddress(accounts[0]);
       setAccount(account);
+
+      // Homework (3) - MOVE HERE
+      const tokenIds = await nft.walletOfOwner(account);
+      setTokenIds(tokenIds);
+      console.log(tokenIds);
+
+      const lastTokenId = tokenIds[tokenIds.length - 1];
+      setLastTokenId(lastTokenId);
 
       //Fetch countdown
       const allowMintingOn = await nft.allowMintingOn();
@@ -88,17 +98,24 @@ function App() {
         <>
           <Row>
             <Col>
-              {balance > 0 ? (
+              {tokenIds.map((tokenId, index) => (
+                <img
+                  key={index}
+                  src={`https://gateway.pinata.cloud/ipfs/bafybeidpuzq54zqnmgq5lsbegxwrwkgrt72545l3pyj6c4y3qsprfamu6u/${tokenId.toString()}.png`}
+                  alt={`Punk ${tokenId}`}
+                  width='100px'
+                  height='100px'
+                />
+              ))}
+              {lastTokenId && (
                 <div className='text-center'>
                   <img
-                    src={`https://gateway.pinata.cloud/ipfs/bafybeidpuzq54zqnmgq5lsbegxwrwkgrt72545l3pyj6c4y3qsprfamu6u/${balance.toString()}.png`}
-                    alt='Open Punk'
+                    src={`https://gateway.pinata.cloud/ipfs/bafybeidpuzq54zqnmgq5lsbegxwrwkgrt72545l3pyj6c4y3qsprfamu6u/${lastTokenId.toString()}.png`}
+                    alt='Latest Punk'
                     width='400px'
                     height='400px'
                   />
                 </div>
-              ) : (
-                <img src={preview} alt='' />
               )}
             </Col>
 

@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 
 const Mint = ({ provider, nft, cost, setIsLoading }) => {
   const [isWaiting, setIsWaiting] = useState(false);
+  const [mintAmount, setMintAmount] = useState(0);
 
   const mintHandler = async (e) => {
     e.preventDefault();
@@ -13,7 +14,9 @@ const Mint = ({ provider, nft, cost, setIsLoading }) => {
 
     try {
       const signer = await provider.getSigner();
-      const transaction = await nft.connect(signer).mint(1, { value: cost });
+      const transaction = await nft
+        .connect(signer)
+        .mint(mintAmount, { value: cost.mul(mintAmount) });
       await transaction.wait();
     } catch {
       window.alert("User rejected or transaction reverted");
@@ -25,6 +28,12 @@ const Mint = ({ provider, nft, cost, setIsLoading }) => {
       onSubmit={mintHandler}
       style={{ maxWidth: "450px", margin: "50px auto" }}
     >
+      <Form.Control
+        type='number'
+        placeholder='Enter amount'
+        className='my-2'
+        onChange={(e) => setMintAmount(e.target.value)}
+      />
       {isWaiting ? (
         <Spinner
           animation='border'
@@ -32,7 +41,7 @@ const Mint = ({ provider, nft, cost, setIsLoading }) => {
         />
       ) : (
         <Form.Group>
-          <Button variant='danger' type='submit' style={{ width: "100%" }}>
+          <Button variant='primary' type='submit' style={{ width: "100%" }}>
             Mint
           </Button>
         </Form.Group>
